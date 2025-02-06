@@ -1,20 +1,21 @@
-import { useState } from 'react';
-import './App.css';
+import { useState } from "react";
+import "./App.css";
 
 function App() {
   const [command, setCommand] = useState("");
 
   const handleCommandSubmit = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/command/', {
-        method: 'POST',
+      const response = await fetch("http://127.0.0.1:8000/api/command/", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ command }),
       });
       const data = await response.json();
       console.log(data.message);
+      alert(data.message);
     } catch (error) {
       console.error("Error sending command:", error);
     }
