@@ -26,6 +26,10 @@ SECRET_KEY = 'django-insecure-*=2o_+%9+j8!gu(+&=ssh4l(ej57(v#zjyx%n5d1c^j!)^n8e*
 DEBUG = True
 
 ALLOWED_HOSTS = []
+# settings.py
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Your React app's address
+]
 
 
 # Application definition
@@ -125,6 +129,8 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+
+
+
 
 
