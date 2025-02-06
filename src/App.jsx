@@ -4,9 +4,20 @@ import './App.css';
 function App() {
   const [command, setCommand] = useState("");
 
-  const handleCommandSubmit = () => {
-    // Send the command to the backend (Django) API here
-    console.log("Command sent to backend:", command);
+  const handleCommandSubmit = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/command/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command }),
+      });
+      const data = await response.json();
+      console.log(data.message);
+    } catch (error) {
+      console.error("Error sending command:", error);
+    }
   };
 
   return (
