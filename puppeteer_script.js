@@ -1,50 +1,70 @@
 import puppeteer from 'puppeteer';
 
-async function searchGoogle(query) {
-    console.log(JSON.stringify({ status: "starting", query }));
+async function executeTask(subtask) {
+    console.log(JSON.stringify({ status: "starting", subtask }));
     
-    const browser = await puppeteer.launch({ 
+    const browser = await puppeteer.launch({
         headless: false,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
-    
+
     try {
         const page = await browser.newPage();
         
-        console.log(JSON.stringify({ status: "navigating" }));
-        await page.goto('https://www.google.com', {
-            waitUntil: 'networkidle2'
-        });
+        // Navigate to starting URL if provided
+        if (subtask.url) {
+            await page.goto(subtask.url, { waitUntil: 'networkidle2' });
+        }
         
-        console.log(JSON.stringify({ status: "typing" }));
-        await page.waitForSelector('textarea[name="q"]', { visible: true });
-        await page.click('textarea[name="q"]');
-        await page.type('textarea[name="q"]', query);
+        // Execute the specific action
+        switch (subtask.action) {
+            case 'search_google':
+                await searchGoogle(page, subtask.query);
+                break;
+            case 'navigate_imdb':
+                await navigateToIMDB(page);
+                break;
+            case 'extract_movies':
+                return await extractTopMovies(page, subtask.count);
+            case 'get_actor_info':
+                return await getActorInfo(page, subtask.actor_name);
+            // Add more actions as needed
+        }
         
-        console.log(JSON.stringify({ status: "searching" }));
-        await Promise.all([
-            page.waitForNavigation({ waitUntil: 'networkidle2' }),
-            page.click('input[type="submit"]')
-        ]);
-        
-        console.log(JSON.stringify({ status: "extracting" }));
-        await page.waitForSelector('.g');
-        
-        const results = await page.evaluate(() => {
-            const titles = Array.from(document.querySelectorAll('.g h3'));
-            return titles.slice(0, 10).map(title => title.textContent);
-        });
-        
-        console.log(JSON.stringify(results));
-        return results;
+        // Extract requested data if specified
+        if (subtask.data_to_extract) {
+            const data = await extractData(page, subtask.data_to_extract, subtask.selectors);
+            return { [subtask.action]: data };
+        }
         
     } catch (error) {
-        console.log(JSON.stringify({ error: error.message }));
+        console.error(JSON.stringify({ error: error.message }));
+        throw error;
     } finally {
         await browser.close();
     }
 }
 
-// Get the search query from command line arguments
-const searchQuery = process.argv[2] || 'top restaurants near me';
-searchGoogle(searchQuery);
+// Helper functions for specific actions
+async function searchGoogle(page, query) {
+    await page.waitForSelector('textarea[name="q"]');
+    await page.type('textarea[name="q"]', query);
+    await Promise.all([
+        page.waitForNavigation(),
+        page.keyboard.press('Enter')
+    ]);
+}
+
+async function extractData(page, dataType, selectors) {
+    await page.waitForSelector(selectors[dataType]);
+    return await page.evaluate((selector) => {
+        const elements = document.querySelectorAll(selector);
+        return Array.from(elements).map(el => el.textContent);
+    }, selectors[dataType]);
+}
+
+// Parse command line argument and execute
+const subtask = JSON.parse(process.argv[2]);
+executeTask(subtask)
+    .then(result => console.log(JSON.stringify(result)))
+    .catch(error => console.error(JSON.stringify({ error: error.message })));

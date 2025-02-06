@@ -9,7 +9,7 @@ function App() {
     try {
         console.log('Sending command:', command);
         
-        const response = await fetch('http://127.0.0.1:8000/execute_puppeteer/', {
+        const response = await fetch('http://127.0.0.1:8000/api/command/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
