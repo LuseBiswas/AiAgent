@@ -1,70 +1,64 @@
+#!/usr/bin/env node
 import puppeteer from 'puppeteer';
 
-async function executeTask(subtask) {
-    console.log(JSON.stringify({ status: "starting", subtask }));
-    
-    const browser = await puppeteer.launch({
-        headless: false,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+async function executeTask(subtasks) {
+  console.log('🚀 Starting Persistent Puppeteer Automation',subtasks);
+  
+  const browser = await puppeteer.launch({
+    headless: false,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  const page = await browser.newPage();
 
-    try {
-        const page = await browser.newPage();
-        
-        // Navigate to starting URL if provided
-        if (subtask.url) {
-            await page.goto(subtask.url, { waitUntil: 'networkidle2' });
-        }
-        
-        // Execute the specific action
-        switch (subtask.action) {
-            case 'search_google':
-                await searchGoogle(page, subtask.query);
-                break;
-            case 'navigate_imdb':
-                await navigateToIMDB(page);
-                break;
-            case 'extract_movies':
-                return await extractTopMovies(page, subtask.count);
-            case 'get_actor_info':
-                return await getActorInfo(page, subtask.actor_name);
-            // Add more actions as needed
-        }
-        
-        // Extract requested data if specified
-        if (subtask.data_to_extract) {
-            const data = await extractData(page, subtask.data_to_extract, subtask.selectors);
-            return { [subtask.action]: data };
-        }
-        
-    } catch (error) {
-        console.error(JSON.stringify({ error: error.message }));
-        throw error;
-    } finally {
-        await browser.close();
+  try {
+    let finalResult = {};
+
+    for (const subtask of subtasks) {
+      console.log('Current Subtask:', JSON.stringify(subtask));
+
+      switch (subtask.action) {
+        case 'navigate':
+          console.log(`🌐 Navigating to URL: ${subtask.url}`);
+          await page.goto(subtask.url, { waitUntil: 'networkidle2' });
+          finalResult = { status: 'navigated', url: subtask.url };
+          break;
+
+        case 'extract':
+          console.log(`🔍 Extracting data with selector: ${subtask.selectors}`);
+          await page.waitForSelector(subtask.selectors);
+          const data = await page.evaluate(selector => {
+            const elements = document.querySelectorAll(selector);
+            return Array.from(elements).map(el => el.textContent.trim());
+          }, subtask.selectors);
+          console.log(`📊 Extracted ${data.length} items`);
+          finalResult = { status: 'extracted', data, type: subtask.data_to_extract };
+          break;
+
+        case 'limit':
+          const limit = parseInt(subtask.data_to_extract);
+          console.log(`✂️ Limiting results to ${limit} items`);
+          finalResult.data = finalResult.data.slice(0, limit);
+          break;
+      }
     }
+
+    await browser.close();
+    return finalResult;
+  } catch (error) {
+    console.error('❌ Task Execution Error:', error);
+    await browser.close();
+    throw error;
+  }
 }
 
-// Helper functions for specific actions
-async function searchGoogle(page, query) {
-    await page.waitForSelector('textarea[name="q"]');
-    await page.type('textarea[name="q"]', query);
-    await Promise.all([
-        page.waitForNavigation(),
-        page.keyboard.press('Enter')
-    ]);
-}
-
-async function extractData(page, dataType, selectors) {
-    await page.waitForSelector(selectors[dataType]);
-    return await page.evaluate((selector) => {
-        const elements = document.querySelectorAll(selector);
-        return Array.from(elements).map(el => el.textContent);
-    }, selectors[dataType]);
-}
-
-// Parse command line argument and execute
-const subtask = JSON.parse(process.argv[2]);
-executeTask(subtask)
-    .then(result => console.log(JSON.stringify(result)))
-    .catch(error => console.error(JSON.stringify({ error: error.message })));
+(async () => {
+  try {
+    const subtasks = JSON.parse(process.argv[2]);
+    const result = await executeTask(subtasks);
+    console.log('🏁 Final Result:', JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result));
+  } catch (error) {
+    console.error('💥 Script Execution Failed:', error);
+    process.exit(1);
+  }
+})();
