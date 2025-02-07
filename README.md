@@ -1,8 +1,13 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# AI Agent - Automated Web Browsing 
 
-Currently, two official plugins are available:
+Specify any task related to browser like scrapping, searching etc and it will do on the behalf of you.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+
+## I stopped Making it
+
+- I just make it to understand the behind the scene, how it will work. 
+- Now I understood it and came up with fully funtional thing next time
+- Its just to get the expereince and doing HIT & TRIAL
+
